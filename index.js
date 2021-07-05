@@ -2,7 +2,8 @@ const qrcode = require("qrcode-terminal");
 const fs = require("fs");
 require("dotenv").config();
 
-const SESSION_PATH = "./session.json"
+const SESSION_PATH = "./session.json";
+const BLACKLIST_PATH = "./blacklist.json";
 const { Client } = require('whatsapp-web.js');
 
 //Read sessionData file
@@ -45,7 +46,7 @@ client.on('message_create', async message => {
         return;
     } 
     
-    let blacklist = JSON.parse(fs.readFileSync("blacklist.json"));
+    let blacklist = JSON.parse(fs.readFileSync(BLACKLIST_PATH));
     let author = (await message.getContact());
     let name = author.name;
     let receiver = message.to;
@@ -73,7 +74,7 @@ client.on('message_create', async message => {
             console.log("This user is already blacklisted");
         }
 
-        fs.writeFileSync("blacklist.json", JSON.stringify(blacklist))
+        fs.writeFileSync(BLACKLIST_PATH, JSON.stringify(blacklist))
     }
     if(body === "!whitelist" && message.fromMe){
         if(blacklist.users.includes(receiver)){
@@ -83,7 +84,7 @@ client.on('message_create', async message => {
             console.log("This user is not blacklisted");
         }
 
-        fs.writeFileSync("blacklist.json", JSON.stringify(blacklist))
+        fs.writeFileSync(BLACKLIST_PATH, JSON.stringify(blacklist))
     }
 
     return;
