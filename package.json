@@ -1,0 +1,21 @@
+{
+  "name": "whatsapp-bot",
+  "version": "1.0.0",
+  "description": "A Whatsapp bot that converts images to stickers",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "clear blacklist": "node clear_blacklist.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.12.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
