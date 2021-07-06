@@ -1,9 +1,11 @@
 const qrcode = require("qrcode-terminal");
 const fs = require("fs");
 require("dotenv").config();
+process.name = "whatsapp-bot"
 
 const SESSION_PATH = "./session.json";
 const BLACKLIST_PATH = "./blacklist.json";
+const ACCEPTED_MEDIA_TYPES = ["image","video", "gif"];
 const { Client } = require('whatsapp-web.js');
 
 //Read sessionData file
@@ -41,7 +43,7 @@ client.on('ready', async () => {
 
 client.on('message_create', async message => {
     //HANDLE LIBRARY ERROR
-    if(!message.hasMedia && message.type == "image"){
+    if(!message.hasMedia && ACCEPTED_MEDIA_TYPES.includes(message.type)){
         console.log("\nError in library");
         return;
     } 
@@ -62,7 +64,7 @@ client.on('message_create', async message => {
     console.log("\n--"+(name||author.id._serialized)+"--");
     console.log(body);
 
-    if(message.type === "image" && body === "!sticker"){
+    if(ACCEPTED_MEDIA_TYPES.includes(message.type) && (body === "!sticker" || body === "! sticker")){
         sendSticker(message);
     }
 
@@ -95,7 +97,7 @@ async function sendSticker(message){
     let media = (await message.downloadMedia());
 
     console.log("Sending sticker...");
-    client.sendMessage(message.from, media,{sendMediaAsSticker: true, caption: "Hola buenas tardes"});
+    client.sendMessage(message.from, media,{sendMediaAsSticker: true});
 
     console.log("Sticker sent back!");
 }
