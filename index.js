@@ -1,16 +1,16 @@
 const qrcode = require("qrcode-terminal");
 const fs = require("fs");
 require("dotenv").config();
-process.name = "whatsapp-bot"
 
 const SESSION_PATH = "./session.json";
 const BLACKLIST_PATH = "./blacklist.json";
 const ACCEPTED_MEDIA_TYPES = ["image","video", "gif"];
+
 const { Client } = require('whatsapp-web.js');
 
 //Read sessionData file
 let sessionData;
-if(fs.readFileSync(SESSION_PATH)){
+if(fs.existsSync(SESSION_PATH) && fs.readFileSync(SESSION_PATH)){
     sessionData = JSON.parse(fs.readFileSync(SESSION_PATH));
 }
 //Creates new Client and appends session data
@@ -48,6 +48,7 @@ client.on('message_create', async message => {
         return;
     } 
     
+    //SETUP
     let blacklist = JSON.parse(fs.readFileSync(BLACKLIST_PATH));
     let author = (await message.getContact());
     let name = author.name;
@@ -60,14 +61,25 @@ client.on('message_create', async message => {
         return;
     }
 
+    //LOG
     let body = message.body;
     console.log("\n--"+(name||author.id._serialized)+"--");
     console.log(body);
 
+    //SEND MEDIA IN MESSAGE AS STICKER
     if(ACCEPTED_MEDIA_TYPES.includes(message.type) && (body === "!sticker" || body === "! sticker")){
         sendSticker(message);
     }
 
+    //SEND MEDIA IN QUOTED MESSAGE AS STICKER
+    if(message.hasQuotedMsg){
+        let quoted = await message.getQuotedMessage();
+        if(ACCEPTED_MEDIA_TYPES.includes(quoted.type) && (body === "!sticker" || body === "! sticker")){
+            sendSticker(quoted, message.from);
+        }
+    }
+
+    //BLACKLIST CONTACT
     if(body === "!blacklist" && message.fromMe){
         if(!blacklist.users.includes(receiver)){
             blacklist.users.push(receiver);
@@ -78,6 +90,8 @@ client.on('message_create', async message => {
 
         fs.writeFileSync(BLACKLIST_PATH, JSON.stringify(blacklist))
     }
+
+    //WHITELIST CONTACT
     if(body === "!whitelist" && message.fromMe){
         if(blacklist.users.includes(receiver)){
             blacklist.users.splice(blacklist.users.indexOf(receiver));
@@ -92,12 +106,12 @@ client.on('message_create', async message => {
     return;
 });
 
-async function sendSticker(message){
-    console.log("Downloading Image...");
+async function sendSticker(message, replier=undefined){
+    console.log("Downloading media...");
     let media = (await message.downloadMedia());
 
     console.log("Sending sticker...");
-    client.sendMessage(message.from, media,{sendMediaAsSticker: true});
+    client.sendMessage(replier||message.from, media,{sendMediaAsSticker: true});
 
     console.log("Sticker sent back!");
 }
