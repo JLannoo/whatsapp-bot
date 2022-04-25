@@ -27,7 +27,8 @@ const client = new Client ({
     puppeteer: {
         headless: !ARGUMENTS.includes("-headful"),
         executablePath: ARGUMENTS.includes("-chrome") ? PATH_TO_CHROME : ""
-    }
+    },
+    ffmpegPath: env.FFMPEG_PATH
 });
 
 client.initialize();
