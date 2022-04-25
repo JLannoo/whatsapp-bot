@@ -5,17 +5,29 @@ require("dotenv").config();
 const SESSION_PATH = "./session.json";
 const BLACKLIST_PATH = "./blacklist.json";
 const ACCEPTED_MEDIA_TYPES = ["image","video", "gif"];
+const PATH_TO_CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+const ARGUMENTS = process.argv.slice(2);
 
-const { Client } = require('whatsapp-web.js');
+const { Client , LocalAuth } = require('whatsapp-web.js');
+const { env } = require("process");
+
+const rl = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
 
 //Read sessionData file
-let sessionData;
 if(fs.existsSync(SESSION_PATH) && fs.readFileSync(SESSION_PATH)){
     sessionData = JSON.parse(fs.readFileSync(SESSION_PATH));
 }
+
 //Creates new Client and appends session data
 const client = new Client ({
-    session: sessionData
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: !ARGUMENTS.includes("-headful"),
+        executablePath: ARGUMENTS.includes("-chrome") ? PATH_TO_CHROME : ""
+    }
 });
 
 client.initialize();
@@ -26,18 +38,9 @@ client.on('qr', (qr) => {
     qrcode.generate(qr, {small: true})
 });
 
-//Write session when authorized
-client.on('authenticated', session => {
-    sessionData = session;
-
-    fs.writeFile(SESSION_PATH, JSON.stringify(sessionData), (err) => {
-        if(err) console.log(err)
-        else console.log("Written succesfully!");
-    })
-});
-
 client.on('ready', async () => {
     console.log('Client is ready!');
+    client.sendMessage(env.WPP_SELF, "🤖  *BEEP BOOP*  🤖\n_Bot iniciado!_");
 })
 
 
@@ -66,17 +69,14 @@ client.on('message_create', async message => {
     console.log("\n--"+(name||author.id._serialized)+"--");
     console.log(body);
 
-    //SEND MEDIA IN MESSAGE AS STICKER
-    if(ACCEPTED_MEDIA_TYPES.includes(message.type) && (body === "!sticker" || body === "! sticker")){
-        sendSticker(message);
+    //SEND MEDIA AS STICKER
+    if(ACCEPTED_MEDIA_TYPES.includes(message.type) && (body.startsWith("!sticker") || body.startsWith("! sticker"))){
+        sendSticker(message);                                       //IN MESSAGE
     }
 
-    //SEND MEDIA IN QUOTED MESSAGE AS STICKER
-    if(message.hasQuotedMsg){
+    if(message.hasQuotedMsg && (body.startsWith("!sticker") || body.startsWith("! sticker"))){
         let quoted = await message.getQuotedMessage();
-        if(ACCEPTED_MEDIA_TYPES.includes(quoted.type) && (body === "!sticker" || body === "! sticker")){
-            sendSticker(quoted, message.from);
-        }
+        sendSticker(quoted, message.from);                          //IN QUOTED MESSAGE
     }
 
     //BLACKLIST CONTACT
@@ -107,15 +107,30 @@ client.on('message_create', async message => {
 });
 
 async function sendSticker(message, replier=undefined){
+    if(message.fromMe) message.from = message.to;
+
     console.log("Downloading media...");
+    client.sendMessage(replier||message.from, "🤖  *BEEP BOOP*  🤖\n_Enviando sticker..._");
+
     let media = (await message.downloadMedia());
+    let name = message.body.slice(9).trim();                 //"! sticker".length = 9, "!sticker ".length = 9
 
     console.log("Sending sticker...");
-    client.sendMessage(replier||message.from, media,{sendMediaAsSticker: true});
+    client.sendMessage(replier||message.from, media,{sendMediaAsSticker: true, stickerName: name, stickerAuthor: "Bot de JLannoo"});
 
     console.log("Sticker sent back!");
 }
 
 client.on("disconnected", () => {
     console.log("Client disconnected");
+
+    rl.question('Restart? (y/n): ', resp => {
+        if(resp.toLowerCase() === "y"){
+            console.clear();
+            client.initialize();
+            console.log("Initializing...");
+            rl.close();
+        }
+        rl.close();
+    });
 });
