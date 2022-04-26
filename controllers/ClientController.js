@@ -36,7 +36,7 @@ async function messageHandler(message) {
 
         const quoted = await message.getQuotedMessage();
         if (quoted && Messenger.validate.isMedia(quoted)) {
-            Messenger.sendSticker(quoted);
+            Messenger.sendSticker(quoted, message.body);
             return;
         }
     }

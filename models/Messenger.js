@@ -26,7 +26,7 @@ Messenger.validate.isQuotedMedia = async (message) => {
     }
 }
 
-Messenger.sendSticker = async (message) => {
+Messenger.sendSticker = async (message, stickerName=null) => {
     const sendTo = message.fromMe ? message.to : message.from;
 
     console.log("Downloading media...");
@@ -36,7 +36,7 @@ Messenger.sendSticker = async (message) => {
     const name = message.body.slice(9).trim();                 //"! sticker".length = 9, "!sticker ".length = 9
 
     console.log("Sending sticker...");
-    Client.sendMessage(sendTo, media,{sendMediaAsSticker: true, stickerName: name, stickerAuthor: "Bot de JLannoo"});
+    Client.sendMessage(sendTo, media,{sendMediaAsSticker: true, stickerName: stickerName??name, stickerAuthor: "Bot de JLannoo"});
 
     console.log("Sticker sent back!");
 }
