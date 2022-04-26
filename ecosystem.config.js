@@ -2,7 +2,8 @@ module.exports = {
   apps : [{
     name: 'Whatsapp-Bot',
     script: 'index.js',
-    watch: '.'
+    watch: '.',
+    ignore_watch: ["config",".wwebjs_auth"],
   }],
 
   deploy : {
